@@ -3,6 +3,7 @@ from tqdm import tqdm
 import numpy as np
 from activation import ActivationFunctions
 from loss import Loss
+import matplotlib.pyplot as plt
 
 class Layer:
     def __init__(self, n_inputs: int, n_neurons: int, activation: Callable[[np.ndarray], np.ndarray],
@@ -65,6 +66,7 @@ class Network:
         self.y_test = to_categorical(self.y_test, num_classes=10)
 
     def train(self, epochs: int, batch_size: int) -> None:
+        self.loss_history = []
         for epoch in range(epochs):
             permutation = np.random.permutation(self.x_train.shape[0])
             x_shuffled = self.x_train[permutation]
@@ -103,6 +105,7 @@ class Network:
 
             avg_loss = epoch_loss / num_batches
             tqdm.write(f"-> Loss: {avg_loss:.4f}")
+            self.loss_history.append(avg_loss)
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """
@@ -129,6 +132,16 @@ class Network:
         accuracy = np.mean(predictions == y_true)
         print(f"Test Accuracy: {accuracy.astype(float) * 100:.2f}%")
 
+    def plot_loss(self) -> None:
+        plt.figure(figsize=(8, 5))
+        plt.plot(self.loss_history, label="Training Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Loss over Epochs")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
 
 
 if __name__ == "__main__":
@@ -154,12 +167,13 @@ if __name__ == "__main__":
         activation_derivative=None,  # Not needed for softmax + CCE
     )
 
-    optimizer = StochasticGradientDescent(alpha=0.01)
+    optimizer = StochasticGradientDescent(alpha=0.005)
     net = Network([layer1, layer2, layer3], optimizer)
 
     net.load_data()
     net.train(epochs=25, batch_size=64)
     net.evaluate()
+    net.plot_loss()
 
     
 
