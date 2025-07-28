@@ -4,6 +4,7 @@ import numpy as np
 from activation import ActivationFunctions
 from loss import Loss
 import matplotlib.pyplot as plt
+import json
 
 class Layer:
     def __init__(self, n_inputs: int, n_neurons: int, activation: Callable[[np.ndarray], np.ndarray],
@@ -48,6 +49,24 @@ class Network:
     def __init__(self, layers: list[Layer], optimizer: StochasticGradientDescent):
         self.layers = layers
         self.optimizer = optimizer
+
+    def save_json(self, path: str):
+        model_data = []
+        for layer in self.layers:
+            model_data.append({
+                "weights": layer.weights.tolist(),
+                "biases": layer.biases.tolist(),
+            })
+        with open(path, "w") as f:
+            json.dump(model_data, f)
+
+    def load_json(self, path: str):
+        with open(path, "r") as f:
+            model_data = json.load(f)
+
+        for layer, data in zip(self.layers, model_data):
+            layer.weights = data["weights"]
+            layer.biases = data["biases"]
 
     def load_data(self) -> None:
         from tensorflow.keras.datasets import mnist
@@ -133,6 +152,9 @@ class Network:
         print(f"Test Accuracy: {accuracy.astype(float) * 100:.2f}%")
 
     def plot_loss(self) -> None:
+        """
+        plot a graph depicting the loss as the model trains
+        """
         plt.figure(figsize=(8, 5))
         plt.plot(self.loss_history, label="Training Loss")
         plt.xlabel("Epoch")
@@ -142,20 +164,27 @@ class Network:
         plt.grid(True)
         plt.show()
 
+def train_model(model: Network, path: str):
+    """
+    train the model and save the model data in the specified path
+    """
+    model.load_data()
+    model.train(epochs=25, batch_size=64)
+    model.save_json(path)
 
 
 if __name__ == "__main__":
     # Initializing the layers of the network
     layer1 = Layer(
         n_inputs=784,
-        n_neurons = 128,
+        n_neurons=128,
         activation=ActivationFunctions.ReLU,
         activation_derivative=ActivationFunctions.ReLU_derivative,
     )
 
     layer2 = Layer(
         n_inputs=128,
-        n_neurons = 64,
+        n_neurons=64,
         activation=ActivationFunctions.ReLU,
         activation_derivative=ActivationFunctions.ReLU_derivative,
     )
@@ -170,11 +199,7 @@ if __name__ == "__main__":
     optimizer = StochasticGradientDescent(alpha=0.005)
     net = Network([layer1, layer2, layer3], optimizer)
 
-    net.load_data()
-    net.train(epochs=25, batch_size=64)
-    net.evaluate()
-    net.plot_loss()
-
+    train_model(net, path="model.json")
     
 
 
