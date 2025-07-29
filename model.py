@@ -56,17 +56,13 @@ class Network:
             model_data.append({
                 "weights": layer.weights.tolist(),
                 "biases": layer.biases.tolist(),
+                "n_inputs": layer.weights.shape[0],
+                "n_neurons": layer.weights.shape[1],
+                "activation": layer.activation.__name__,
+                "activation_derivative": layer.activation_derivative.__name__
             })
         with open(path, "w") as f:
             json.dump(model_data, f)
-
-    def load_json(self, path: str):
-        with open(path, "r") as f:
-            model_data = json.load(f)
-
-        for layer, data in zip(self.layers, model_data):
-            layer.weights = data["weights"]
-            layer.biases = data["biases"]
 
     def load_data(self) -> None:
         from tensorflow.keras.datasets import mnist
@@ -164,16 +160,11 @@ class Network:
         plt.grid(True)
         plt.show()
 
-def train_model(model: Network, path: str):
+
+def train_model(path: str):
     """
     train the model and save the model data in the specified path
     """
-    model.load_data()
-    model.train(epochs=25, batch_size=64)
-    model.save_json(path)
-
-
-if __name__ == "__main__":
     # Initializing the layers of the network
     layer1 = Layer(
         n_inputs=784,
@@ -198,8 +189,32 @@ if __name__ == "__main__":
 
     optimizer = StochasticGradientDescent(alpha=0.005)
     net = Network([layer1, layer2, layer3], optimizer)
+    net.load_data()
+    net.train(epochs=25, batch_size=64)
+    net.save_json(path)
 
-    train_model(net, path="model.json")
+
+def load_model(path: str) -> Network:
+    with open(path, "r") as f:
+        model_data = json.load(f)
+
+    layers = []
+    
+    for layer_info in model_data:
+        layer = Layer(
+            n_inputs=layer_info["n_inputs"],
+            n_neurons=layer_info["n_neurons"],
+            activation=layer_info["activation"],
+            activation_derivative=layer_info["activation_derivative"],
+        )
+        layer.weights = layer_info["weights"]
+        layer.biases = layer_info["biases"]
+        layers.append(layer)
+
+    optimizer = StochasticGradientDescent(alpha=0.005)
+    return Network(layers, optimizer)
+
+
     
 
 
