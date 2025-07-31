@@ -195,6 +195,9 @@ def train_model(path: str):
 
 
 def load_model(path: str) -> Network:
+    """
+    load the model data from the JSON file
+    """
     with open(path, "r") as f:
         model_data = json.load(f)
 
