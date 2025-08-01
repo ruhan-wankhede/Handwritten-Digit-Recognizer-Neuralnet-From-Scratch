@@ -1,4 +1,6 @@
 import pygame
+import numpy as np
+import model
 
 pygame.init()
 
@@ -39,6 +41,20 @@ def update_pixels(mouse_x: float, mouse_y: float):
         grid[int(mouse_y // 28)][int(mouse_x // 28)] = 1
 
 
+def guess():
+    global grid
+    formatted_grid = np.array(grid).flatten()
+
+    try:
+        with open("model.json", "r") as f:
+            net = model.load_model("model.json")
+            print(net.predict(formatted_grid))
+    except FileNotFoundError:
+        model.train_model("model.json")
+        net = model.load_model("model.json")
+        print(net.predict(formatted_grid))
+
+
 
 def main():
     run = True
@@ -60,6 +76,8 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
                     clear_grid()
+                elif event.key == pygame.K_p:
+                    guess()
 
         WIN.fill((255, 255, 255))
 

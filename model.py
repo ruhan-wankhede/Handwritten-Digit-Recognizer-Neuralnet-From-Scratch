@@ -59,7 +59,8 @@ class Network:
                 "n_inputs": layer.weights.shape[0],
                 "n_neurons": layer.weights.shape[1],
                 "activation": layer.activation.__name__,
-                "activation_derivative": layer.activation_derivative.__name__
+                "activation_derivative": (layer.activation_derivative.__name__ if layer.activation_derivative else None)
+                # else implemented for Softmax + CCE where activation_derivative is None
             })
         with open(path, "w") as f:
             json.dump(model_data, f)
@@ -190,7 +191,7 @@ def train_model(path: str):
     optimizer = StochasticGradientDescent(alpha=0.005)
     net = Network([layer1, layer2, layer3], optimizer)
     net.load_data()
-    net.train(epochs=25, batch_size=64)
+    net.train(epochs=20, batch_size=64)
     net.save_json(path)
 
 
@@ -204,12 +205,21 @@ def load_model(path: str) -> Network:
     layers = []
     
     for layer_info in model_data:
+
+        # getting function references from the json text
+        activation_name = layer_info["activation"]
+        activation = getattr(ActivationFunctions, activation_name)
+
+        deriv_name = layer_info["activation_derivative"]
+        activation_derivative = getattr(ActivationFunctions, deriv_name) if deriv_name else None
+
         layer = Layer(
             n_inputs=layer_info["n_inputs"],
             n_neurons=layer_info["n_neurons"],
-            activation=layer_info["activation"],
-            activation_derivative=layer_info["activation_derivative"],
+            activation=activation,
+            activation_derivative=activation_derivative,
         )
+
         layer.weights = layer_info["weights"]
         layer.biases = layer_info["biases"]
         layers.append(layer)
