@@ -100,7 +100,7 @@ def draw_ui():
 
         # Preview text
         prev_surface = font.render("Image fed to AI", True, (40, 40, 40))
-        WIN.blit(prev_surface, (WIDTH + 97, 750))
+        WIN.blit(prev_surface, (WIDTH + 108, 750))
 
     # Prediction text
     font = pygame.font.SysFont("Roboto", 44)
@@ -173,7 +173,7 @@ def guess():
     except FileNotFoundError:
         font = pygame.font.SysFont("Roboto", 36)
         text = font.render("Training...", True, (0, 0, 0))
-        WIN.blit(text, (WIDTH + 130, 50))
+        WIN.blit(text, (WIDTH + 132, 50))
         pygame.display.flip()
         model.train_model("model.json")
         net = model.load_model("model.json")
