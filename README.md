@@ -16,6 +16,12 @@
 
 ---
 
+## 🚀 Demo
+
+![UI Screenshot](preview.png)
+
+---
+
 ## 🛠 Technologies & Skills Used
 
 | Category         | Tools / Concepts                               |
