@@ -1,10 +1,8 @@
-import PIL.Image
 import pygame
 import numpy as np
 import model
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-import io
 from PIL import Image
 from button import Button
 
