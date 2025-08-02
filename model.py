@@ -191,7 +191,7 @@ def train_model(path: str):
     optimizer = StochasticGradientDescent(alpha=0.005)
     net = Network([layer1, layer2, layer3], optimizer)
     net.load_data()
-    net.train(epochs=40, batch_size=32)
+    net.train(epochs=35, batch_size=32)
     net.save_json(path)
 
 
