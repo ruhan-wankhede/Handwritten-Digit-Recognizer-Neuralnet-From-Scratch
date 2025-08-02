@@ -41,9 +41,51 @@ def update_pixels(mouse_x: float, mouse_y: float):
         grid[int(mouse_y // 28)][int(mouse_x // 28)] = 1
 
 
+def preprocess_grid(grid_2d: list[list]) -> np.ndarray:
+    """
+    preprocess the drawn image to make it similar to the MNIST dataset
+    """
+
+    # Cropping the grid using a bounding box
+
+    arr = np.array(grid_2d)
+
+    rows = np.any(arr, axis=1)
+    cols = np.any(arr, axis=0)
+
+    # in case of a blank input
+    if not rows.any() or not cols.any():
+        return np.zeros(784)
+
+    y_min, y_max = np.where(rows)[0][[0, -1]]
+    x_min, x_max = np.where(cols)[0][[0, -1]]
+
+    digit = arr[y_min:y_max + 1, x_min:x_max + 1]
+
+    # resizing
+    src_h, src_w = digit.shape
+    target_h, target_w = 20, 20
+    resized = np.zeros((target_h, target_w), dtype=digit.dtype)
+    
+    for i in range(target_h):
+        for j in range(target_w):
+            src_y = int(i * src_h / target_h)
+            src_x = int(j * src_w / target_w)
+            resized[i, j] = digit[src_y, src_x]
+
+    # center resized digit on a 28 x 28 canvas
+    canvas = np.zeros((28, 28), dtype=digit.dtype)
+    y_offset = (28 - target_h) // 2
+    x_offset = (28 - target_w) // 2
+    canvas[y_offset: y_offset + target_h, x_offset: x_offset + target_w] = resized
+
+    # Normalize, Flatten and return the formatted grid
+    return canvas.flatten()
+
+
 def guess():
     global grid
-    formatted_grid = np.array(grid).flatten()
+    formatted_grid = preprocess_grid(grid)
 
     try:
         with open("model.json", "r") as f:
@@ -91,4 +133,5 @@ def main():
         pygame.display.flip()
 
 if __name__ == "__main__":
+
     main()
