@@ -1,6 +1,9 @@
+import PIL.Image
 import pygame
 import numpy as np
 import model
+import matplotlib.pyplot as plt
+from PIL import Image
 
 pygame.init()
 
@@ -29,7 +32,7 @@ def draw_pixels():
     """
     for x in range(28):
         for y in range(28):
-            if grid[y][x] == 1:
+            if grid[y][x] == 255:
                 pygame.draw.rect(WIN, (0, 0, 0), (x * 28, y * 28, 28, 28))
 
 
@@ -38,7 +41,21 @@ def update_pixels(mouse_x: float, mouse_y: float):
     update the grid
     """
     if not int(mouse_y // 28) > 27 and not int(mouse_x // 28) > 27:
-        grid[int(mouse_y // 28)][int(mouse_x // 28)] = 1
+        grid[int(mouse_y // 28)][int(mouse_x // 28)] = 255
+
+
+def blur(canvas: np.ndarray) -> np.ndarray:
+    """
+    add box blur to replicate antialiasing in MNIST dataset
+    """
+
+    # the value of a certain pixel will be the average of all the pixels in a 3x3 square
+    blurred = np.zeros((28, 28))
+    for y in range(1, 27):
+        for x in range(1, 27):
+            region = np.array(canvas[y - 1:y + 2, x - 1:x + 2])
+            blurred[y][x] = np.mean(region)
+    return blurred
 
 
 def preprocess_grid(grid_2d: list[list]) -> np.ndarray:
@@ -63,24 +80,19 @@ def preprocess_grid(grid_2d: list[list]) -> np.ndarray:
     digit = arr[y_min:y_max + 1, x_min:x_max + 1]
 
     # resizing
-    src_h, src_w = digit.shape
-    target_h, target_w = 20, 20
-    resized = np.zeros((target_h, target_w), dtype=digit.dtype)
-    
-    for i in range(target_h):
-        for j in range(target_w):
-            src_y = int(i * src_h / target_h)
-            src_x = int(j * src_w / target_w)
-            resized[i, j] = digit[src_y, src_x]
+    img = Image.fromarray(arr.astype(np.uint8))
+    resized = np.array(img.resize((20, 20), resample=Image.BILINEAR))
 
     # center resized digit on a 28 x 28 canvas
     canvas = np.zeros((28, 28), dtype=digit.dtype)
-    y_offset = (28 - target_h) // 2
-    x_offset = (28 - target_w) // 2
-    canvas[y_offset: y_offset + target_h, x_offset: x_offset + target_w] = resized
-
+    y_offset = (28 - 20) // 2
+    x_offset = (28 - 20) // 2
+    canvas[y_offset: y_offset + 20, x_offset: x_offset + 20] = resized
+    canvas = blur(canvas)
     # Normalize, Flatten and return the formatted grid
-    return canvas.flatten()
+    plt.imshow(canvas / 255.0, cmap='gray')
+    plt.show()
+    return (canvas / 255.0).flatten()
 
 
 def guess():
@@ -91,6 +103,7 @@ def guess():
         with open("model.json", "r") as f:
             net = model.load_model("model.json")
             print(net.predict(formatted_grid))
+
     except FileNotFoundError:
         model.train_model("model.json")
         net = model.load_model("model.json")
